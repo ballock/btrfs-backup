@@ -35,6 +35,7 @@ Options:
     --dest hostname: If present, ssh to that machine to make the copy.
     --diff:	     show an approximate diff between the snapshots
     --local:         the directory containing local snapshots
+    --last:          suffix used for the last volume link
 
 This will snapshot volume_name in a btrfs pool, and send the diff
 between it and the previous snapshot (volume_name.last) to another btrfs
@@ -78,12 +79,13 @@ trap 'die "Error line $LINENO with status $?"' ERR
 init=""
 # Keep the last 5 snapshots by default
 keep=5
-TEMP=$(getopt --longoptions help,usage,init,keep:,dest:,prefix:,local:,diff -o h,k:,d:,p: -- "$@") || usage
+TEMP=$(getopt --longoptions help,usage,init,keep:,dest:,prefix:,local:,last:,diff -o h,k:,d:,p: -- "$@") || usage
 dest=localhost
 ssh=""
 pf=""
 diff=""
 local="."
+last="_last"
 
 # getopt quotes arguments with ' We use eval to get rid of that
 eval set -- $TEMP
@@ -106,6 +108,12 @@ do
 	--local)
 	    shift
 	    local=$1
+	    shift
+	    ;;
+
+	--last)
+	    shift
+	    last=$1
 	    shift
 	    ;;
 
@@ -164,11 +172,11 @@ if [[ ! -d "$local" ]]; then
 fi
 
 if [[ -z "$init" ]]; then
-    test -e "${local}/${vol}${pf}_last" \
-	|| die "Cannot sync $vol, ${local}/${vol}${pf}_last missing. Try --init?"
-    src_snap="$(readlink -e ${local}/${vol}${pf}_last)"
+    test -e "${local}/${vol}${pf}$last" \
+	|| die "Cannot sync $vol, ${local}/${vol}${pf}${last} missing. Try --init?"
+    src_snap="$(readlink -e ${local}/${vol}${pf}${last})"
 fi
-src_newsnap="${vol}${pf}_ro.$DATE"
+src_newsnap="${vol}${pf}.$DATE"
 #src_newsnaprw="${vol}${pf}_rw.$DATE"
 
 $ssh test -d "$dest_pool/" || die "ABORT: $dest_pool not a directory (on $dest)"
@@ -198,15 +206,15 @@ fi
 #$ssh btrfs subvolume snapshot "$dest_pool/$src_newsnap" "$dest_pool/$src_newsnaprw"
 
 # Keep track of the last snapshot to send a diff against.
-ln -snf "$src_newsnap" "${local}/${vol}${pf}_last"
-$ssh ln -snf $src_newsnap $dest_pool/${vol}${pf}_last
+ln -snf "$src_newsnap" "${local}/${vol}${pf}${last}"
+$ssh ln -snf $src_newsnap $dest_pool/${vol}${pf}${last}
 # The rw version can be used for mounting with subvol=vol_last_rw
 #ln -snf "$src_newsnaprw" "${local}/${vol}${pf}_last_rw"
 #$ssh ln -snf $src_newsnaprw $dest_pool/${vol}${pf}_last_rw
 
 # How many snapshots to keep on the source btrfs pool (both read
 # only and read-write).
-ls -rd ${local}/${vol}${pf}_ro* | tail -n +$(( $keep + 1 ))| while read snap
+ls -rd ${local}/${vol}${pf}* | tail -n +$(( $keep + 1 ))| while read snap
 do
     btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
 done
@@ -217,7 +225,7 @@ done
 
 # Same thing for destination (assume the same number of snapshots to keep,
 # you can change this if you really want).
-$ssh ls -rd $dest_pool/${vol}${pf}_ro* | tail -n +$(( $keep + 1 ))| while read snap
+$ssh ls -rd $dest_pool/${vol}${pf}* | tail -n +$(( $keep + 1 ))| while read snap
 do
     $ssh btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
 done

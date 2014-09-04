@@ -169,7 +169,7 @@ if [[ -z "$init" ]]; then
     src_snap="$(readlink -e ${local}/${vol}${pf}_last)"
 fi
 src_newsnap="${vol}${pf}_ro.$DATE"
-src_newsnaprw="${vol}${pf}_rw.$DATE"
+#src_newsnaprw="${vol}${pf}_rw.$DATE"
 
 $ssh test -d "$dest_pool/" || die "ABORT: $dest_pool not a directory (on $dest)"
 
@@ -194,14 +194,14 @@ fi
 # We make a read-write snapshot in case you want to use it for a chroot
 # and some testing with a writeable filesystem or want to boot from a
 # last good known snapshot.
-btrfs subvolume snapshot "$local/$src_newsnap" "$local/$src_newsnaprw"
-$ssh btrfs subvolume snapshot "$dest_pool/$src_newsnap" "$dest_pool/$src_newsnaprw"
+#btrfs subvolume snapshot "$local/$src_newsnap" "$local/$src_newsnaprw"
+#$ssh btrfs subvolume snapshot "$dest_pool/$src_newsnap" "$dest_pool/$src_newsnaprw"
 
 # Keep track of the last snapshot to send a diff against.
 ln -snf "$src_newsnap" "${local}/${vol}${pf}_last"
 # The rw version can be used for mounting with subvol=vol_last_rw
-ln -snf "$src_newsnaprw" "${local}/${vol}${pf}_last_rw"
-$ssh ln -snf $src_newsnaprw $dest_pool/${vol}${pf}_last_rw
+#ln -snf "$src_newsnaprw" "${local}/${vol}${pf}_last_rw"
+#$ssh ln -snf $src_newsnaprw $dest_pool/${vol}${pf}_last_rw
 
 # How many snapshots to keep on the source btrfs pool (both read
 # only and read-write).
@@ -209,10 +209,10 @@ ls -rd ${local}/${vol}${pf}_ro* | tail -n +$(( $keep + 1 ))| while read snap
 do
     btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
 done
-ls -rd ${local}/${vol}${pf}_rw* | tail -n +$(( $keep + 1 ))| while read snap
-do
-    btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
-done
+#ls -rd ${local}/${vol}${pf}_rw* | tail -n +$(( $keep + 1 ))| while read snap
+#do
+#    btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
+#done
 
 # Same thing for destination (assume the same number of snapshots to keep,
 # you can change this if you really want).
@@ -220,9 +220,9 @@ $ssh ls -rd $dest_pool/${vol}${pf}_ro* | tail -n +$(( $keep + 1 ))| while read s
 do
     $ssh btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
 done
-$ssh ls -rd $dest_pool/${vol}${pf}_rw* | tail -n +$(( $keep + 1 ))| while read snap
-do
-    $ssh btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
-done
+#$ssh ls -rd $dest_pool/${vol}${pf}_rw* | tail -n +$(( $keep + 1 ))| while read snap
+#do
+#    $ssh btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
+#done
 
 rm $lock

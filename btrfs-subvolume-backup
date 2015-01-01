@@ -214,7 +214,7 @@ $ssh ln -snf $src_newsnap $dest_pool/${vol}${pf}${last}
 
 # How many snapshots to keep on the source btrfs pool (both read
 # only and read-write).
-ls -rd ${local}/${vol}${pf}* | tail -n +$(( $keep + 1 ))| while read snap
+ls -rd ${local}/${vol}${pf}.* | tail -n +$(( $keep + 1 ))| while read snap
 do
     btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
 done
@@ -225,7 +225,7 @@ done
 
 # Same thing for destination (assume the same number of snapshots to keep,
 # you can change this if you really want).
-$ssh ls -rd $dest_pool/${vol}${pf}* | tail -n +$(( $keep + 1 ))| while read snap
+$ssh ls -rd $dest_pool/${vol}${pf}.* | tail -n +$(( $keep + 1 ))| while read snap
 do
     $ssh btrfs subvolume delete "$snap" | grep -v 'Transaction commit:'
 done

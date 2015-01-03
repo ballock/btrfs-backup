@@ -31,7 +31,7 @@ $PROG [--init] [--keep|-k num] [--dest hostname] volume_name /mnt/backup_btrfs_p
 
 Options:
     --init:          Print this help message and exit.
-    --keep num:      Keep the last snapshots for local backups (5 by default)
+    --keep num:      Keep the last snapshots for local backups (60 by default)
     --dest hostname: If present, ssh to that machine to make the copy.
     --diff:	     show an approximate diff between the snapshots
     --local:         the directory containing local snapshots
@@ -77,8 +77,8 @@ trap 'die "Error line $LINENO with status $?"' ERR
 
 
 init=""
-# Keep the last 5 snapshots by default
-keep=5
+# Keep the last 60 snapshots by default
+keep=60
 TEMP=$(getopt --longoptions help,usage,init,keep:,dest:,prefix:,local:,last:,diff -o h,k:,d:,p: -- "$@") || usage
 dest=localhost
 ssh=""

@@ -2,8 +2,15 @@
 
 export PATH=${PATH}:/usr/local/bin:/usr/local/sbin
 
+umount /btrfs >/dev/null 2>&1 || true
+umount /mnt >/dev/null 2>&1 || true
+
 mount -t btrfs LABEL=sp6-backup /mnt || exit 1
-mount -t btrfs UUID=76c2d8f7-278d-428c-9a42-571216cc0773 /btrfs || (umount /mnt; exit 1 )
+if ! mount -t btrfs UUID=76c2d8f7-278d-428c-9a42-571216cc0773 /btrfs; then
+  umount /mnt
+  exit 1
+fi
+
 cd /btrfs
 btrfs-subvolume-backup --local snapshots --last "" \@sp6-home /mnt/snapshots || echo Blad backupu home.
 btrfs-subvolume-backup --local snapshots --last "" \@sp6-root /mnt/snapshots || echo Blad backupu root.
